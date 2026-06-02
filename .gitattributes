@@ -1,0 +1,5 @@
+* text=auto
+*.s   text eol=lf
+*.S   text eol=lf
+*.ld  text eol=lf
+*.py  text eol=lf
