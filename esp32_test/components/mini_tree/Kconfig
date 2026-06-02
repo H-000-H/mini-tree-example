@@ -1,0 +1,19 @@
+# mini_tree Kconfig for ESP-IDF (ESP32-S3)
+# RT-Thread OSAL only — FreeRTOS / bare-metal stubs not needed
+
+menu "mini_tree OSAL & System Configuration"
+
+config OSAL_RTTHREAD
+    bool "RT-Thread"
+    default y
+    help
+      使用 RT-Thread 内核作为 mini_tree 的 OSAL 后端.
+      支持完整的任务、信号量、互斥锁、消息队列、定时器.
+
+config OSAL_NULL
+    bool "None (bare-metal)"
+    help
+      裸机/无 RTOS。不需要任何内核库。
+      无法创建任务；队列使用环形缓冲区 + 忙等待。
+
+endmenu

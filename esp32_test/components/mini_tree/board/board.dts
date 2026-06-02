@@ -1,0 +1,20 @@
+/dts-v1/;
+
+/ {
+    compatible = "esp32,s3-mini-tree";
+    #address-cells = <1>;
+    #size-cells = <0>;
+    model = "ESP32-S3-DevKitC-1";
+
+    soc {
+        /* ── WS2812 地址可寻址 RGB LED (RMT 驱动) ──
+         * ESP32-S3-DevKitC-1 板载 WS2812 接 GPIO48
+         */
+        ws2812: ws2812@48 {
+            compatible = "esp32,ws2812";
+            gpio = <48>;
+            num-leds = <1>;
+            status = "okay";
+        };
+    };
+};
