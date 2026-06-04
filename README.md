@@ -38,7 +38,7 @@ idf.py build
 
 **说明：** ESP32 版本的 `components/mini_tree/` 是 mini_tree 框架的轻量化裁剪。由于 Xtensa 架构与 ARM/RISC-V 不兼容，已移除 `lib/freeRTOS/` 和 `lib/rtthread/` 中的 RTOS 内核源码，FreeRTOS 后端直接使用 ESP-IDF 内置版本。保留设备树、OSAL 抽象层、EventBus 等核心组件。
 
-配置使用 mini_tree 自有的 Kconfig 体系（`components/mini_tree/Kconfig` + `tools/genconfig.py`），在 `idf.py menuconfig` 的 Component config → mini_tree Configuration 中设置。默认 FreeRTOS 后端，支持切换 bare-metal 模式。
+配置集成在 ESP-IDF 的 Kconfig 体系中，运行 `idf.py menuconfig` → Component config → mini_tree Configuration 即可设置。`components/mini_tree/Kconfig` 注册到 ESP-IDF 菜单树，配置项保存在 `sdkconfig` 中。默认 FreeRTOS 后端，支持切换 bare-metal 模式。非 ESP-IDF 环境移植时，同一套 Kconfig + `.config` + `tools/genconfig.py` 可独立使用。
 
 ---
 
