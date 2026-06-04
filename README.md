@@ -31,7 +31,7 @@ git clone --recurse-submodules https://github.com/H-000-H/mini-tree-example.git
 
 ### ESP32 版本
 
-mini_tree 已发布至乐鑫组件注册表，通过 `idf.py add-dependency` 添加到你的项目中：
+通过 `idf.py add-dependency` 添加到你的项目中：
 
 ```bash
 idf.py add-dependency "h-000-h/mini_tree^1.5.0"
