@@ -40,6 +40,11 @@ idf.py build
 
 配置集成在 ESP-IDF 的 Kconfig 体系中，运行 `idf.py menuconfig` → Component config → mini_tree Configuration 即可设置。`components/mini_tree/Kconfig` 注册到 ESP-IDF 菜单树，配置项保存在 `sdkconfig` 中。默认 FreeRTOS 后端，支持切换 bare-metal 模式。非 ESP-IDF 环境移植时，同一套 Kconfig + `.config` + `tools/genconfig.py` 可独立使用。
 
+> **ESP32 开发建议：**
+> ESP-IDF 内置的 FreeRTOS 已针对 Xtensa 双核 SMP 深度优化，Wi-Fi、蓝牙等官方组件均依赖此 FreeRTOS。因此不推荐在 ESP32 上强行使用主仓库的裸机或 RT-Thread 后端。
+>
+> 若执意在 ESP32 上使用双核裸机或单 FreeRTOS 单裸机的 AMP 方案，性能下降是必然的。ESP32 的 RAM 和 Flash 容量完全足以运行 FreeRTOS，不必为节省资源强上裸机。请按实际场景按需选择。
+
 ---
 
 详见各子目录中的说明。
