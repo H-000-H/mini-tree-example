@@ -251,9 +251,7 @@ int board_driver_probe_all(void)
             probe_fn_t probe = board_probe_get_fn(id);
 
             if (!dev || device_get_status(dev) == DEVICE_STATUS_DISABLED)
-            {
                 continue;
-            }
             /* DIRECT 设备不经过 VFS probe, 跳过 */
             if (dev->node && (dev->node->flags & DEVICE_FLAG_DIRECT))
             {
@@ -262,9 +260,7 @@ int board_driver_probe_all(void)
             }
             if (device_get_status(dev) == DEVICE_STATUS_PROBED ||
                 device_get_status(dev) == DEVICE_STATUS_RUNNING)
-            {
                 continue;
-            }
 
             if (device_dependency_not_ready(dev))
             {
@@ -285,10 +281,7 @@ int board_driver_probe_all(void)
                 DRV_LOGW(kTag, "no generated probe for '%s' (compat=%s)",
                          device_get_name(dev), device_get_compatible(dev));
                 (void)device_set_status(dev, DEVICE_STATUS_DISABLED);
-                handle_probe_failure(dev, id);
-                disable_dependents(id);
-                fail++;
-                continue;
+                goto probe_fail;
             }
 
             DRV_LOGI(kTag, "probing '%s' (%s) ...",
@@ -299,21 +292,14 @@ int board_driver_probe_all(void)
                 (void)device_set_status(dev, DEVICE_STATUS_PROBED);
                 int open_ret = 0;
                 if (dev->ops && (dev->ops->open || dev->ops->init))
-                {
                     open_ret = device_open(dev, NULL);
-                }
                 if (open_ret != 0)
                 {
                     (void)device_set_status(dev, DEVICE_STATUS_ERROR);
-                    handle_probe_failure(dev, id);
-                    disable_dependents(id);
-                    fail++;
                     DRV_LOGE(kTag, "device_open FAILED: %s (ret=%d)", device_get_name(dev), open_ret);
+                    goto probe_fail;
                 }
-                else
-                {
-                    ok++;
-                }
+                ok++;
             }
             else if (ret == VFS_ERR_DEFER)
             {
@@ -324,11 +310,15 @@ int board_driver_probe_all(void)
             else
             {
                 (void)device_set_status(dev, DEVICE_STATUS_ERROR);
-                handle_probe_failure(dev, id);
-                disable_dependents(id);
-                fail++;
                 DRV_LOGE(kTag, "probe FAILED: %s (ret=%d)", device_get_name(dev), ret);
+                goto probe_fail;
             }
+            continue;
+
+        probe_fail:
+            handle_probe_failure(dev, id);
+            disable_dependents(id);
+            fail++;
         }
 
         if (deferred == 0) break;

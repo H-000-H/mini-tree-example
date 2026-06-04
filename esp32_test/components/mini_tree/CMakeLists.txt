@@ -1,11 +1,20 @@
 # mini_tree component for ESP-IDF (ESP32-S3)
-# Full framework build: board + core + system_c + drivers
+# Configuration via Kconfig (.config)
+#
+# NOTE: Use CMAKE_CURRENT_LIST_DIR for paths — ESP-IDF's two-phase
+# processing means CMAKE_CURRENT_SOURCE_DIR is NOT the component dir
+# during the requirements-gathering phase.
 
 # ═══════════════════════════════════════════════════════════════
-#  OSAL 后端选择 (改这一行即可切换)
-#  可选值: freertos | rtthread | null
+# OSAL source selection from .config (kconfiglib format)
 # ═══════════════════════════════════════════════════════════════
-set(MINI_TREE_OSAL "freertos" CACHE STRING "OSAL backend: freertos, rtthread, null")
+set(KCONFIG_DOT "${CMAKE_CURRENT_LIST_DIR}/.config")
+
+file(STRINGS "${KCONFIG_DOT}" CONFIG_OSAL_ENTRY
+     REGEX "^CONFIG_OSAL_[A-Z_]+=y$")
+
+# Force cmake reconfigure when .config changes
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${KCONFIG_DOT}")
 
 # ── RT-Thread 内核源文件 (仅在 rtthread 模式下编译) ──
 set(RTT_SRCS
@@ -29,25 +38,21 @@ set(RTT_SRCS
     "lib/rtthread/libcpu/xtensa/context_gcc.S"
 )
 
-# ── 按 OSAL 选择源文件 & 编译宏 ──
-if(MINI_TREE_OSAL STREQUAL "freertos")
-    set(OSAL_SRCS       "osal/src/osal_freertos.c")
-    set(OSAL_RTT_KERNEL "")   # 不编 RT-Thread 内核
-    set(OSAL_DEFINE     CONFIG_OSAL_FREERTOS)
-
-elseif(MINI_TREE_OSAL STREQUAL "rtthread")
+if(CONFIG_OSAL_ENTRY STREQUAL "CONFIG_OSAL_RTTHREAD=y")
     set(OSAL_SRCS       "osal/src/osal_rtthread.c")
-    set(OSAL_RTT_KERNEL ${RTT_SRCS})   # 编入 RT-Thread 内核
+    set(OSAL_RTT_KERNEL ${RTT_SRCS})
     set(OSAL_DEFINE     CONFIG_OSAL_RTTHREAD)
-    # 警告: ESP-IDF 自带的 FreeRTOS 仍在链接中, 两个内核并存需自行处理冲突
 
-elseif(MINI_TREE_OSAL STREQUAL "null")
+elseif(CONFIG_OSAL_ENTRY STREQUAL "CONFIG_OSAL_NULL=y")
     set(OSAL_SRCS       "osal/src/osal_null.c")
     set(OSAL_RTT_KERNEL "")
     set(OSAL_DEFINE     CONFIG_OSAL_NULL)
 
 else()
-    message(FATAL_ERROR "MINI_TREE_OSAL must be one of: freertos, rtthread, null")
+    # Default: FreeRTOS
+    set(OSAL_SRCS       "osal/src/osal_freertos.c")
+    set(OSAL_RTT_KERNEL "")
+    set(OSAL_DEFINE     CONFIG_OSAL_FREERTOS)
 endif()
 
 # ── HAL (ESP32-S3 real implementation) ──
@@ -78,7 +83,7 @@ set(CORE_SRCS
     "core/src/production_log.c"
 )
 
-# ── System layer (C runtime) ──
+# ── System layer ──
 set(SYSTEM_SRCS
     "system_c/src/system_init.c"
     "system_c/src/system_scrubber.c"
@@ -97,6 +102,7 @@ set(ALGO_SRCS
     "algorithm/buffer/circle_fifo_buffer.c"
 )
 
+# ═══════════════════════════════════════════════════════════════
 idf_component_register(
     SRCS
         ${OSAL_SRCS}
@@ -128,7 +134,36 @@ idf_component_register(
         esp_driver_gpio
 )
 
-# Compile definitions (OSAL 宏由 ${OSAL_DEFINE} 传入, config.h 不再硬编码)
+# ═══════════════════════════════════════════════════════════════
+# Generate config.h from Kconfig at build time
+# Use CMAKE_BINARY_DIR based location (stable across both phases)
+# ═══════════════════════════════════════════════════════════════
+set(KCONFIG_GEN_DIR "${CMAKE_BINARY_DIR}/generated/kconfig/mini_tree")
+set(KCONFIG_OUT     "${KCONFIG_GEN_DIR}/config.h")
+
+add_custom_command(
+    OUTPUT  ${KCONFIG_OUT}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${KCONFIG_GEN_DIR}
+    COMMAND python "${CMAKE_CURRENT_LIST_DIR}/tools/genconfig.py"
+                "${CMAKE_CURRENT_LIST_DIR}/Kconfig"
+                ${KCONFIG_GEN_DIR}
+                --config "${KCONFIG_DOT}"
+    DEPENDS
+        "${CMAKE_CURRENT_LIST_DIR}/Kconfig"
+        "${KCONFIG_DOT}"
+        "${CMAKE_CURRENT_LIST_DIR}/tools/genconfig.py"
+    COMMENT "Generating config.h from Kconfig"
+)
+
+add_custom_target(kconfig_gen DEPENDS ${KCONFIG_OUT})
+add_dependencies(${COMPONENT_LIB} kconfig_gen)
+
+# Make generated config.h available to this component
+target_include_directories(${COMPONENT_LIB} PRIVATE ${KCONFIG_GEN_DIR})
+
+# OSAL macro must be a compile definition (not just in config.h)
+# because osal_rtthread.c checks `#ifdef CONFIG_OSAL_RTTHREAD`
+# before `#include "config.h"`.
 target_compile_definitions(${COMPONENT_LIB} PRIVATE
     ${OSAL_DEFINE}
     __RT_KERNEL_SOURCE__

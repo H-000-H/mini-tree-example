@@ -1,19 +1,120 @@
 # mini_tree Kconfig for ESP-IDF (ESP32-S3)
-# RT-Thread OSAL only — FreeRTOS / bare-metal stubs not needed
+# All configuration options — edit .config or run `idf.py menuconfig`
+# (navigate to Component config → mini_tree Configuration)
 
-menu "mini_tree OSAL & System Configuration"
+menu "mini_tree Configuration"
+
+menu "Platform"
+choice
+    prompt "Target MCU"
+    default PLATFORM_XTENSA
+    help
+      Select the target processor architecture.
+
+config PLATFORM_XTENSA
+    bool "Xtensa (ESP32)"
+    help
+      Espressif ESP32 series (Xtensa LX6/LX7).
+endchoice
+endmenu
+
+menu "OSAL Backend"
+choice
+    prompt "RTOS backend"
+    default OSAL_FREERTOS
+    help
+      Select the RTOS abstraction layer backend.
+
+config OSAL_FREERTOS
+    bool "FreeRTOS"
+    help
+      Use ESP-IDF built-in FreeRTOS. The default for ESP-IDF projects.
 
 config OSAL_RTTHREAD
     bool "RT-Thread"
-    default y
     help
-      使用 RT-Thread 内核作为 mini_tree 的 OSAL 后端.
-      支持完整的任务、信号量、互斥锁、消息队列、定时器.
+      Use RT-Thread kernel as OSAL backend.
+      WARNING: ESP-IDF's FreeRTOS will still be linked;
+      two kernels coexist — handle conflicts yourself.
 
 config OSAL_NULL
     bool "None (bare-metal)"
     help
-      裸机/无 RTOS。不需要任何内核库。
-      无法创建任务；队列使用环形缓冲区 + 忙等待。
+      No RTOS. Queue uses ring buffer + busy-wait.
+endchoice
+endmenu
+
+menu "System Log"
+choice
+    prompt "Log backend"
+    default SYS_LOG_USE_PRINTF
+    help
+      Select system log output backend.
+
+config SYS_LOG_USE_PRINTF
+    bool "Direct printf"
+    help
+      Output via plain printf.
+
+config SYS_LOG_USE_OSAL
+    bool "OSAL logging"
+    help
+      Output via OSAL log interface.
+
+config SYS_LOG_USE_ESP
+    bool "ESP-IDF logging (ESP_LOGI)"
+    help
+      Output via ESP-IDF's ESP_LOGI / ESP_LOGW / ESP_LOGE.
+endchoice
+endmenu
+
+menu "System Backend"
+choice
+    prompt "System runtime implementation"
+    default SYSTEM_CPP
+    help
+      Select C or C++ system backend.
+
+config SYSTEM_C
+    bool "C"
+    help
+      Pure C system runtime.
+
+config SYSTEM_CPP
+    bool "C++"
+    help
+      C++ system runtime (default for ESP-IDF IoT scenarios).
+endchoice
+endmenu
+
+menu "Board Features"
+
+config PRODUCTION_LOG
+    bool "Production log"
+    default n
+    help
+      Enable production-level logging.
+
+config SAFETY_SHUTDOWN
+    bool "Safety shutdown"
+    default n
+    help
+      Enable hardware-level safety shutdown.
+
+config ENABLE_WDT
+    bool "Watchdog (TWDT + RTC WDT)"
+    default y
+    help
+      Enable task watchdog and RTC watchdog.
+endmenu
+
+menu "Build Options"
+
+config BUILD_DISASM
+    bool "Generate disassembly listing"
+    default n
+    help
+      Generate .lst disassembly listing after build.
+endmenu
 
 endmenu

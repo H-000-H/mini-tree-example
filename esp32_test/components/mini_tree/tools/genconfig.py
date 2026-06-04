@@ -13,7 +13,14 @@ import sys
 from pathlib import Path
 from typing import List
 
-from kconfiglib import BOOL, HEX, INT, Kconfig, STRING, TRISTATE
+# ESP-IDF bundles a custom kconfiglib that may not export TRISTATE
+from kconfiglib import Kconfig
+from kconfiglib.core import BOOL, HEX, INT, STRING
+try:
+    from kconfiglib.core import TRISTATE
+    _BOOL_TYPES = (BOOL, TRISTATE)
+except ImportError:
+    _BOOL_TYPES = (BOOL,)
 
 
 def _atomic_write(path: Path, content: str) -> None:
@@ -42,7 +49,7 @@ def _build_config_h(kconf: Kconfig) -> str:
             continue
         name: str = f"CONFIG_{sym.name}"
 
-        if sym.type in (BOOL, TRISTATE):
+        if sym.type in _BOOL_TYPES:
             if sym.str_value in ("y", "m"):
                 lines.append(f"#define {name} 1")
 

@@ -1,8 +1,8 @@
 
+
 #include <stdio.h>
 #include <string.h>
 
-#include "config.h"
 #include "osal.h"
 #include "system_init.h"
 #include "device.h"
