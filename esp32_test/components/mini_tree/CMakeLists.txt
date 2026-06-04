@@ -1,4 +1,5 @@
 # mini_tree component for ESP-IDF (ESP32-S3)
+# Lightweight mode: device tree + OSAL + bare metal only.
 # Configuration via Kconfig (.config)
 #
 # NOTE: Use CMAKE_CURRENT_LIST_DIR for paths — ESP-IDF's two-phase
@@ -16,48 +17,25 @@ file(STRINGS "${KCONFIG_DOT}" CONFIG_OSAL_ENTRY
 # Force cmake reconfigure when .config changes
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${KCONFIG_DOT}")
 
-# ── RT-Thread 内核源文件 (仅在 rtthread 模式下编译) ──
-set(RTT_SRCS
-    "lib/rtthread/src/clock.c"
-    "lib/rtthread/src/cpu_up.c"
-    "lib/rtthread/src/defunct.c"
-    "lib/rtthread/src/idle.c"
-    "lib/rtthread/src/ipc.c"
-    "lib/rtthread/src/irq.c"
-    "lib/rtthread/src/kservice.c"
-    "lib/rtthread/src/mem.c"
-    "lib/rtthread/src/object.c"
-    "lib/rtthread/src/scheduler_comm.c"
-    "lib/rtthread/src/scheduler_up.c"
-    "lib/rtthread/src/thread.c"
-    "lib/rtthread/src/timer.c"
-    "lib/rtthread/src/klibc/kerrno.c"
-    "lib/rtthread/src/klibc/kstdio.c"
-    "lib/rtthread/src/klibc/kstring.c"
-    "lib/rtthread/libcpu/xtensa/cpuport.c"
-    "lib/rtthread/libcpu/xtensa/context_gcc.S"
-)
+# ── OSAL 后端选择 ──
+if(CONFIG_OSAL_ENTRY STREQUAL "CONFIG_OSAL_FREERTOS=y")
+    set(OSAL_SRCS   "osal/src/osal_freertos.c")
+    set(OSAL_DEFINE CONFIG_OSAL_FREERTOS)
 
-if(CONFIG_OSAL_ENTRY STREQUAL "CONFIG_OSAL_RTTHREAD=y")
-    set(OSAL_SRCS       "osal/src/osal_rtthread.c")
-    set(OSAL_RTT_KERNEL ${RTT_SRCS})
-    set(OSAL_DEFINE     CONFIG_OSAL_RTTHREAD)
-
-elseif(CONFIG_OSAL_ENTRY STREQUAL "CONFIG_OSAL_NULL=y")
-    set(OSAL_SRCS       "osal/src/osal_null.c")
-    set(OSAL_RTT_KERNEL "")
-    set(OSAL_DEFINE     CONFIG_OSAL_NULL)
+elseif(CONFIG_OSAL_ENTRY STREQUAL "CONFIG_OSAL_RTTHREAD=y")
+    set(OSAL_SRCS   "osal/src/osal_rtthread.c")
+    set(OSAL_DEFINE CONFIG_OSAL_RTTHREAD)
 
 else()
-    # Default: FreeRTOS
-    set(OSAL_SRCS       "osal/src/osal_freertos.c")
-    set(OSAL_RTT_KERNEL "")
-    set(OSAL_DEFINE     CONFIG_OSAL_FREERTOS)
+    # Default: NULL (bare metal)
+    set(OSAL_SRCS   "osal/src/osal_null.c")
+    set(OSAL_DEFINE CONFIG_OSAL_NULL)
 endif()
 
 # ── HAL (ESP32-S3 real implementation) ──
 set(HAL_SRCS
     "hal_if/src/hal_esp32s3.c"
+    "hal_if/src/hal_cpu_amp.c"    # AMP 弱符号 (CPU_CORES=1 时无影响)
 )
 
 # ── Board layer (device tree, driver, config store, tasks) ──
@@ -106,7 +84,6 @@ set(ALGO_SRCS
 idf_component_register(
     SRCS
         ${OSAL_SRCS}
-        ${OSAL_RTT_KERNEL}
         ${HAL_SRCS}
         ${BOARD_SRCS}
         ${GEN_SRCS}
@@ -125,11 +102,7 @@ idf_component_register(
         "system_c/include"
         "system_cpp/include"
         "drivers/ws2812"
-        "lib/rtthread/include"
-        "lib/rtthread"
-        "lib/rtthread/libcpu/xtensa"
     REQUIRES
-        freertos
         esp_driver_rmt
         esp_driver_gpio
 )
@@ -161,12 +134,6 @@ add_dependencies(${COMPONENT_LIB} kconfig_gen)
 # Make generated config.h available to this component
 target_include_directories(${COMPONENT_LIB} PRIVATE ${KCONFIG_GEN_DIR})
 
-# OSAL macro must be a compile definition (not just in config.h)
-# because osal_rtthread.c checks `#ifdef CONFIG_OSAL_RTTHREAD`
-# before `#include "config.h"`.
 target_compile_definitions(${COMPONENT_LIB} PRIVATE
     ${OSAL_DEFINE}
-    __RT_KERNEL_SOURCE__
-    RT_KLIBC_USING_LIBC_VSNPRINTF
-    RT_KLIBC_USING_LIBC_VSSCANF
 )

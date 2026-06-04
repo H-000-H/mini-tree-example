@@ -1,17 +1,15 @@
 # ==============================================================================
 # hal_if — 硬件抽象接口层 (Hardware Abstraction Layer Interface)
-# ==============================================================================
-# 定义 HAL 接口头文件，不含具体硬件实现。
-# 各平台通过 soc_port_* 组件提供实现。
+# ESP-IDF 构建: 源文件在父 CMakeLists.txt 的 idf_component_register() 中指定。
+# 本文件仅用于 CMake 独立构建（非 ESP-IDF）。
 # ==============================================================================
 
 add_library(hal_if STATIC
     "src/hal_if_dummy.c"
+    "src/hal_cpu_amp.c"
 )
 
 target_include_directories(hal_if
     PUBLIC
         "include"
 )
-
-add_dependencies(hal_if kconfig_generate)

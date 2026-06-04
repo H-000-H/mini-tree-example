@@ -58,6 +58,8 @@
 
 /* ── OSAL 互斥锁池 (device_t per-device lock + 驱动内部锁) ── */
 #define OSAL_MUTEX_POOL_SIZE      24
+/* ESP-IDF StaticSemaphore_t 内含 portMUX_TYPE，需要更多空间 */
+#define OSAL_MUTEX_STORAGE_SIZE   128
 
 /* ── 设备树运行时 ── */
 #define BOARD_MAX_DEVICE_COUNT    32

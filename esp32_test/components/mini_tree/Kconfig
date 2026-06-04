@@ -1,4 +1,5 @@
 # mini_tree Kconfig for ESP-IDF (ESP32-S3)
+# Lightweight: device tree + OSAL + bare metal only.
 # All configuration options — edit .config or run `idf.py menuconfig`
 # (navigate to Component config → mini_tree Configuration)
 
@@ -18,24 +19,39 @@ config PLATFORM_XTENSA
 endchoice
 endmenu
 
+menu "Multi-core Configuration"
+
+config CPU_CORES
+    int "Number of CPU cores"
+    default 1
+    range 1 2
+    help
+      CPU 核心数量。1 = 单核模式（默认）。
+      2 = 双核 AMP 模式，Core 0 跑 RTOS，
+      Core 1 跑裸机代码。
+      设为 2 时板级需实现
+      hal_cpu_secondary_startup()。
+
+endmenu
+
 menu "OSAL Backend"
 choice
     prompt "RTOS backend"
     default OSAL_FREERTOS
     help
-      Select the RTOS abstraction layer backend.
+      Select the OS abstraction layer backend.
 
 config OSAL_FREERTOS
     bool "FreeRTOS"
     help
-      Use ESP-IDF built-in FreeRTOS. The default for ESP-IDF projects.
+      Use ESP-IDF built-in FreeRTOS.
 
 config OSAL_RTTHREAD
     bool "RT-Thread"
     help
       Use RT-Thread kernel as OSAL backend.
-      WARNING: ESP-IDF's FreeRTOS will still be linked;
-      two kernels coexist — handle conflicts yourself.
+      Note: RT-Thread kernel not bundled in this project;
+      provide your own or delete this option.
 
 config OSAL_NULL
     bool "None (bare-metal)"

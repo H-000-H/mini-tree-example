@@ -80,6 +80,7 @@ void osal_spinlock_unlock(osal_spinlock_t* lock)
 
 static struct osal_mutex s_mutex_pool[OSAL_MUTEX_POOL_SIZE];
 static uint8_t s_mutex_used[OSAL_MUTEX_POOL_SIZE];
+
 static portMUX_TYPE s_pool_mux = portMUX_INITIALIZER_UNLOCKED;
 
 int osal_pool_claim(volatile uint8_t* used_slots, size_t slot_count)
@@ -209,8 +210,7 @@ int osal_mutex_unlock(osal_mutex_t* mutex)
     return xSemaphoreGiveRecursive(mutex->handle) == pdTRUE ? 0 : -1;
 }
 
-/* ── FreeRTOS 静态分配回调 (非 ESP-IDF 环境才需要，因为 ESP-IDF 自带) ── */
-#if !defined(ESP_PLATFORM)
+/* ── FreeRTOS 静态分配回调 (configSUPPORT_STATIC_ALLOCATION) ── */
 static StackType_t   s_idle_stack[configMINIMAL_STACK_SIZE];
 static StaticTask_t  s_idle_tcb;
 
@@ -222,7 +222,6 @@ void vApplicationGetIdleTaskMemory(StaticTask_t** ppxIdleTaskTCBBuffer,
     *ppxIdleTaskStackBuffer = s_idle_stack;
     *pulIdleTaskStackSize   = configMINIMAL_STACK_SIZE;
 }
-#endif
 
 /* ── 任务 (stack_size 字节 → FreeRTOS words 转换) ── */
 static inline uint32_t osal_stack_words(uint32_t stack_bytes)
@@ -234,7 +233,17 @@ int osal_task_create(const char* name, uint32_t stack_size,
                      uint32_t priority, osal_task_entry_t entry,
                      void* param, int core_id)
 {
+#if CONFIG_CPU_CORES > 1
+    if (core_id > 0)
+    {
+        printf("[osal] WARN: task '%s' requested Core %d, "
+               "but AMP Core 1 has no OS scheduler. "
+               "Falling back to Core 0.\n", name, core_id);
+        core_id = 0;
+    }
+#else
     (void)core_id;
+#endif
 
     TaskHandle_t handle = NULL;
     BaseType_t ret = xTaskCreate(entry, name, osal_stack_words(stack_size),
@@ -249,7 +258,17 @@ int osal_task_create_handle(const char* name, uint32_t stack_size,
                             osal_task_handle_t* out_handle)
 {
     if (!out_handle) return -1;
+#if CONFIG_CPU_CORES > 1
+    if (core_id > 0)
+    {
+        printf("[osal] WARN: task '%s' requested Core %d, "
+               "but AMP Core 1 has no OS scheduler. "
+               "Falling back to Core 0.\n", name, core_id);
+        core_id = 0;
+    }
+#else
     (void)core_id;
+#endif
 
     TaskHandle_t handle = NULL;
     BaseType_t ret = xTaskCreate(entry, name, osal_stack_words(stack_size),
@@ -362,17 +381,6 @@ COMPAT_WEAK void safety_hardware_shutdown(void)
 COMPAT_WEAK void osal_panic_interlock(void)
 {
     /* 板级可覆盖: 喂硬件看门狗, 切断执行器供电, 等待复位 */
-}
-
-/* ── 调度器挂起 / 中断禁用 ── */
-void osal_sched_suspend(void)
-{
-    vTaskSuspendAll();
-}
-
-void osal_int_disable(void)
-{
-    portDISABLE_INTERRUPTS();
 }
 
 /* ── 日志 ── */

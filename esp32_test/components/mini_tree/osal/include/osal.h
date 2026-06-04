@@ -70,7 +70,9 @@ void osal_sched_suspend(void);   /* 挂起调度器 (FreeRTOS: vTaskSuspendAll) 
 void osal_int_disable(void);     /* 禁用全局中断 (FreeRTOS: portDISABLE_INTERRUPTS) */
 
 /* ── 互斥锁 ── */
+#ifndef OSAL_MUTEX_STORAGE_SIZE
 #define OSAL_MUTEX_STORAGE_SIZE 96   /* 足够容纳 struct osal_mutex + 静态信号量缓存 */
+#endif
 
 int osal_mutex_create(osal_mutex_t** out);
 int osal_mutex_create_static(osal_mutex_t** out, void* storage, size_t storage_size);
