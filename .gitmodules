@@ -1,3 +1,6 @@
 [submodule "stm32_test/mini_tree"]
 	path = stm32_test/mini_tree
 	url = https://github.com/H-000-H/Mini-Tree.git
+[submodule "stm32f103c8t6_cubemx_test/mini_tree"]
+	path = stm32f103c8t6_cubemx_test/mini_tree
+	url = https://github.com/H-000-H/Mini-Tree.git
