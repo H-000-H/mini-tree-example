@@ -1,0 +1,72 @@
+/dts-v1/;
+
+#include "soc/stm32f103c8t6.dtsi"
+#include <dt-bindings/gpio.h>
+
+/ {
+    compatible = "st,stm32f103c8t6";
+    #address-cells = <1>;
+    #size-cells = <0>;
+    model = "STM32F103C8T6 Mini Tree";
+
+    chosen {
+        tick-rate = <1000>;
+        heap-size = <32768>;
+    };
+
+    /* 测试引脚定义 (各 test 通过 device_find_by_label 读取) */
+    leds {
+        compatible = "test,leds";
+        led0: led0 {
+            label = "led0";
+            port   = <2>;   /* GPIOC */
+            pin    = <13>;
+            active = <0>;   /* LOW = 亮 */
+        };
+    };
+
+    buttons {
+        compatible = "test,buttons";
+        btn0: btn0 {
+            label = "btn0";
+            port   = <0>;   /* GPIOA */
+            pin    = <0>;
+            mode   = <1>;   /* INPUT_PULL_UP */
+        };
+    };
+
+    wifi_config: wifi_config {
+        label = "wifi_config";
+        ssid = "your_ssid";
+        password = "your_password";
+    };
+
+    mqtt_config: mqtt_config {
+        label = "mqtt_config";
+        broker_host = "test.mosquitto.org";
+        broker_port = <1883>;
+        client_id = "mini-tree-test";
+        test_topic = "mini-tree/test";
+    };
+
+    w25q64: w25q64 {
+        compatible = "winbond,w25q64";
+        label = "w25q64";
+    };
+};
+
+/* 使能片上外设 */
+&gpio0 { status = "okay"; };
+&gpio1 { status = "okay"; };
+&gpio2 { status = "okay"; };
+&uart1 { status = "okay"; };
+&uart2 { status = "okay"; };
+&i2c1  { status = "okay"; };
+&spi1  { status = "okay"; };
+&adc1  { status = "okay"; };
+&tim1  { status = "okay"; };
+&tim2  { status = "okay"; timer-index = <0>; };
+&tim3  { status = "okay"; timer-index = <1>; };
+&tim4  { status = "okay"; timer-index = <2>; };
+&can1  { status = "okay"; can-index = <0>; };
+&rtc   { status = "okay"; rtc-index = <0>; };
