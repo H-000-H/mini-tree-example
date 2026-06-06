@@ -1,0 +1,53 @@
+/dts-v1/;
+
+/ {
+    compatible = "your-project";
+    #address-cells = <1>;
+    #size-cells = <0>;
+    model = "your-board";
+
+    /* ── 板级外设节点 ──
+     * 移植到新平台时:
+     *   1. 将 compatible 替换为你的平台名
+     *   2. 填写各外设的引脚属性
+     *   3. 将 status 从 "disabled" 改为 "okay"
+     *   4. 运行 dtc-lite 重新生成设备表
+     */
+    soc {
+        uart0: uart@0 {
+            compatible = "vendor,uart";
+            reg = <0>;
+            status = "disabled";
+        };
+
+        i2c0: i2c@0 {
+            compatible = "vendor,i2c-bus";
+            reg = <0>;
+            status = "disabled";
+        };
+
+        spi0: spi@0 {
+            compatible = "vendor,spi-bus";
+            reg = <0>;
+            status = "disabled";
+        };
+
+        adc0: adc@0 {
+            compatible = "vendor,adc";
+            reg = <0>;
+            status = "disabled";
+        };
+
+        pwm0: pwm@0 {
+            compatible = "vendor,pwm";
+            channels = <8>;
+            status = "disabled";
+        };
+
+        gpio0: gpio@0 {
+            compatible = "vendor,gpio";
+            reg = <0>;
+            status = "disabled";
+        };
+    };
+};
