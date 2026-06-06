@@ -1,0 +1,25 @@
+{
+    // ── clangd C/C++ 语言服务器 ──
+    "clangd.path": "C:/Program Files/LLVM/bin/clangd.exe",
+    "clangd.arguments": [
+        "--query-driver=C:/ST/STM32CubeCLT_1.20.0/GNU-tools-for-STM32/bin/arm-none-eabi-gcc.exe"
+    ],
+    "clangd.fallbackFlags": [
+        "-mcpu=cortex-m3",
+        "-mthumb",
+        "-DSTM32F103xB",
+        "-DUSE_HAL_DRIVER"
+    ],
+
+    // 关闭 VS Code 自带 C++ IntelliSense，避免与 clangd 冲突
+    "C_Cpp.intelliSenseEngine": "disabled",
+    "C_Cpp.autocomplete": "disabled",
+    "C_Cpp.errorSquiggles": "disabled",
+    "cmake.cmakePath": "cube-cmake",
+    "cmake.configureArgs": [
+        "-DCMAKE_COMMAND=cube-cmake"
+    ],
+    "cmake.preferredGenerators": [
+        "Ninja"
+    ],
+}

@@ -1,61 +1,56 @@
 cmake_minimum_required(VERSION 3.22)
 
-# ==============================================================================
-# STM32F103C8T6 + CubeMX HAL + mini_tree 示例工程
-# ==============================================================================
-# 用法:
-#   cmake -B build -DCMAKE_TOOLCHAIN_FILE=cmake/gcc.cmake
-#   cmake --build build
 #
-# 前置条件:
-#   1. ARM GCC 工具链 (arm-none-eabi-)
-#   2. Python3 （设备树生成需要）
-#   3. mini_tree 子模块已初始化: git submodule update --init
-# ==============================================================================
+# This file is generated only once,
+# and is not re-generated if converter is called multiple times.
+#
+# User is free to modify the file as much as necessary
+#
 
-# ---- 项目定义 ----
+# Setup compiler settings
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+
+# Define the build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
-project(stm32f103c8t6_cubemx_test C CXX ASM)
+# Set the project name
+set(CMAKE_PROJECT_NAME stm32f103c8t6-mini-tree)
+
+# Enable compile command to ease indexing with e.g. clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
+
+# Core project settings
+project(${CMAKE_PROJECT_NAME})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
-# ---- 全局编译选项 ----
+# Enable CMake support for ASM, C and CXX languages
+enable_language(C CXX ASM)
+
+# 全局编译选项 (在 add_subdirectory 前设置, 对所有目标生效)
 add_compile_options(-ffunction-sections -fdata-sections)
 
-# ---- 配置 mini_tree Kconfig ----
-file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/mini_tree/.config
-    "# Kconfig 配置 — ARM Cortex-M3 裸机\n"
-    "CONFIG_PLATFORM_ARM_CM3=y\n"
-    "CONFIG_CPU_CORES=1\n"
-    "CONFIG_OSAL_NULL=y\n"
-    "CONFIG_SYSTEM_CPP=y\n"
-    "CONFIG_SYS_LOG_USE_PRINTF=y\n"
-    "CONFIG_BUILD_DISASM=n\n"
-)
-
-# ---- 注入自定义 board 文件到 mini_tree 子模块 ----
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/board/board.dts
-     DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/mini_tree/board/)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/board/soc/stm32f103c8t6.dtsi
-     DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/mini_tree/board/soc/)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/board/CMakeLists.txt
-     DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/mini_tree/board/)
-
-# ---- CubeMX 集成 ----
+# Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
+
+# Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 
-# ---- mini_tree 框架 ----
+# Link directories setup
+target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
+    # Add user defined library search paths
+)
+
+# Add mini_tree framework
 add_subdirectory(mini_tree)
 
-# ---- soc_port: STM32F103C8T6 HAL 实现 ----
+# Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
+    # Add user sources here
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/hal_stubs.c
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/hal_gpio.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/hal_spi.cpp
@@ -77,14 +72,13 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/wifi_esp32.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/wifi_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/test_wifi.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/test_mqtt.cpp
 
-    # LFS
+    # ── LFS ──
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/fs/lfs.c
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/fs/lfs_util.c
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/fs/flash_lfs.c
 
-    # MQTT
+    # ── MQTT ──
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/mqtt/MQTTPacket/src/MQTTPacket.c
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/mqtt/MQTTPacket/src/MQTTConnectClient.c
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/mqtt/MQTTPacket/src/MQTTDeserializePublish.c
@@ -95,29 +89,44 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/mqtt/MQTTClient/MQTTClient.c
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/mqtt/MQTTClient/MQTTBareMetal.c
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/mqtt/mqtt_transport.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/test_mqtt.cpp
 )
 
+# Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
+    # Add user defined include paths
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/fs
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/mqtt/MQTTPacket/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/soc_port_stm32f103c8t6_hal/mqtt/MQTTClient
 )
 
+# Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+    # Add user defined symbols
     _MQTT_
     MQTT_USE_TLS
     MQTTCLIENT_PLATFORM_HEADER=MQTTBareMetal.h
     LFS_NO_ASSERT
 )
 
-# ---- 链接 ----
+# Remove wrong libob.a library dependency when using cpp files
+list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
+
+# Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
+
+    # Add user defined libraries
     mini_tree
 )
 
+# 链接脚本 & map 生成
 target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
     -Wl,-Map=${CMAKE_PROJECT_NAME}.map
     -Wl,--print-memory-usage
 )
+
+# ── fix_cc_for_clangd 已废弃 ──
+# 改为在 .clangd 中设置 Compiler: clang++，clangd 自动使用系统 LLVM clang
+# 查询内置头文件路径，不再需要替换 compile_commands.json。

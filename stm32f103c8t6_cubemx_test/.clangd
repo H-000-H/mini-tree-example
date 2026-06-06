@@ -1,0 +1,9 @@
+CompileFlags:
+  CompilationDatabase: build/Debug
+  Add:
+    - '--target=arm-none-eabi'
+    - '-mcpu=cortex-m3'
+    - '-DSTM32F103xB'
+    - '-DUSE_HAL_DRIVER'
+Diagnostics:
+  UnusedIncludes: None
