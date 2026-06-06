@@ -210,7 +210,21 @@ int osal_mutex_unlock(osal_mutex_t* mutex)
     return xSemaphoreGiveRecursive(mutex->handle) == pdTRUE ? 0 : -1;
 }
 
-/* ── FreeRTOS 静态分配回调 (configSUPPORT_STATIC_ALLOCATION) ── */
+/* ── 调度器挂起 / 中断禁用 (safe_state, bootloop 防护) ── */
+void osal_sched_suspend(void)
+{
+    vTaskSuspendAll();
+}
+
+void osal_int_disable(void)
+{
+    portDISABLE_INTERRUPTS();
+}
+
+/* ── FreeRTOS 静态分配回调 (configSUPPORT_STATIC_ALLOCATION) ──
+ * ESP-IDF v5.x 自身已在 port_common.c 提供此回调, 避免重复定义.
+ */
+#ifndef ESP_PLATFORM
 static StackType_t   s_idle_stack[configMINIMAL_STACK_SIZE];
 static StaticTask_t  s_idle_tcb;
 
@@ -222,6 +236,7 @@ void vApplicationGetIdleTaskMemory(StaticTask_t** ppxIdleTaskTCBBuffer,
     *ppxIdleTaskStackBuffer = s_idle_stack;
     *pulIdleTaskStackSize   = configMINIMAL_STACK_SIZE;
 }
+#endif /* !ESP_PLATFORM */
 
 /* ── 任务 (stack_size 字节 → FreeRTOS words 转换) ── */
 static inline uint32_t osal_stack_words(uint32_t stack_bytes)

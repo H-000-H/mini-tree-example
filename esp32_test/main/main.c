@@ -31,9 +31,8 @@ void app_main(void)
         nvs_flash_init();
     }
 
-    printf("\n\n=======================================\n");
+
     printf("ESP32-S3 mini-tree WS2812 Test\n");
-    printf("=======================================\n\n");
 
     printf("[1] device_tree_init()...\n");
     device_tree_init();
@@ -56,7 +55,8 @@ void app_main(void)
     device_t* dev = board_dev_get(dev_id);
     printf("[4] dev = %p\n\n", dev);
 
-    if (!dev) {
+    if (!dev) 
+    {
         printf("[ERROR] dev is NULL!\n");
         for (;;) { vTaskDelay(1000); }
     }
@@ -68,15 +68,22 @@ void app_main(void)
     /* board_driver_probe_all() 在 probe 成功后自动打开设备,
      * 因此到这里设备可能已经是 DEVICE_STATUS_RUNNING.
      * 仅在非 RUNNING 状态下才调用 device_open. */
-    if (status != DEVICE_STATUS_RUNNING) {
+    if (status != DEVICE_STATUS_RUNNING) 
+    {
         printf("[6] device_open(dev)...\n");
         int open_ret = device_open(dev, NULL);
         printf("[6] device_open returned %d\n\n", open_ret);
-        if (open_ret != VFS_OK) {
+        if (open_ret != VFS_OK) 
+        {
             printf("[ERROR] device_open failed!\n");
-            for (;;) { vTaskDelay(1000); }
+            for (;;) 
+            { 
+                vTaskDelay(1000); 
+            }
         }
-    } else {
+    } 
+    else 
+    {
         printf("[6] device already RUNNING (opened during probe), skipping open\n\n");
     }
 
